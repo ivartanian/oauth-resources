@@ -18,8 +18,8 @@ public class ServerSecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-        auth.inMemoryAuthentication();
-//                .withUser("user").password("user").roles("USER");
+        auth.inMemoryAuthentication()
+                .withUser("user").password("user").roles("USER");
     }
 
     @Override
@@ -28,16 +28,13 @@ public class ServerSecurityConfig extends WebSecurityConfigurerAdapter {
         return super.authenticationManagerBean();
     }
 
-//    @Override
-//    protected void configure(HttpSecurity http) throws Exception {
-//        http
-//                .httpBasic()
-//                .and()
-//                .anonymous().disable()
-//                .authorizeRequests()
-//                .antMatchers("/login").permitAll()
-//                .anyRequest().authenticated()
-//                .and()
-//                .formLogin().permitAll();
-//    }
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http
+                .httpBasic()
+                .and()
+                .anonymous().disable()
+                .authorizeRequests()
+                .anyRequest().authenticated();
+    }
 }
