@@ -132,10 +132,10 @@ public class OAuth2ServerConfig {
 
         @Override
         public void configure(HttpSecurity http) throws Exception {
-            http.httpBasic().and()
+            http.httpBasic().disable()
                     .anonymous().disable()
                     .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and().authorizeRequests()
-                    .antMatchers("/login").permitAll().anyRequest().authenticated().and().formLogin().permitAll();
+                    .anyRequest().authenticated().and().formLogin().disable();
         }
 
         @Primary
