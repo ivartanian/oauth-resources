@@ -22,176 +22,55 @@ import javax.sql.DataSource;
  * Created by viv on 02.09.2016.
  */
 @Configuration
-public class OAuth2ServerConfig {
+@EnableResourceServer
+@PropertySource({"classpath:persistence.properties"})
+public class OAuth2ServerConfig extends ResourceServerConfigurerAdapter{
 
-//    @Configuration
-//    @EnableAuthorizationServer
-//    protected static class AuthorizationServerConfiguration extends AuthorizationServerConfigurerAdapter {
-//
-//        private final TokenStore tokenStore;
-//        private final DataSource dataSource;
-//        private final AuthenticationManager authenticationManager;
-//
-//        @Autowired
-//        public AuthorizationServerConfiguration(TokenStore tokenStore, DataSource dataSource,
-//                                                @Qualifier("authenticationManagerBean") AuthenticationManager authenticationManager) {
-//            this.tokenStore = tokenStore;
-//            this.dataSource = dataSource;
-//            this.authenticationManager = authenticationManager;
-//        }
-//
-//        @Override
-//        public void configure(AuthorizationServerSecurityConfigurer oauthServer) throws Exception {
-//            oauthServer
-//                    .tokenKeyAccess("permitAll()")
-//                    .checkTokenAccess("isAuthenticated()");
-//        }
-//
-//        @Override
-//        public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
-//            clients.jdbc(dataSource);
-////                    .withClient("sampleClientId")
-////                    .authorizedGrantTypes("implicit")
-////                    .scopes("read", "write")
-////                    .accessTokenValiditySeconds(60 * 60)
-////                    .refreshTokenValiditySeconds(60 * 60 * 12)
-////                    .authorities("ROLE_USER")
-////                    .and()
-////                    .withClient("clientIdPassword")
-////                    .secret("secret")
-////                    .authorizedGrantTypes("client_credentials", "password", "authorization_code", "refresh_token")
-////                    .scopes("read")
-////                    .authorities("ROLE_USER");
-//        }
-//
-//        @Override
-//        public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
-//            endpoints
-//                    .authorizationCodeServices(authorizationCodeServices())
-//                    .approvalStore(approvalStore())
-//                    .tokenStore(tokenStore)
-//                    .accessTokenConverter(accessTokenConverter())
-//                    .reuseRefreshTokens(true)
-//                    .userApprovalHandler(userApprovalHandler())
-//                    .authenticationManager(authenticationManager)
-//                    .setClientDetailsService(clientDetailsService());
-//        }
-//
-//        @Bean
-//        public ApprovalStore approvalStore() {
-//            return new JdbcApprovalStore(dataSource);
-//        }
-//
-//        @Bean
-//        public AuthorizationCodeServices authorizationCodeServices() {
-//            return new JdbcAuthorizationCodeServices(dataSource);
-//        }
-//
-//        @Bean
-//        public AccessTokenConverter accessTokenConverter() {
-//            return new DefaultAccessTokenConverter();
-//        }
-//
-//        @Bean
-//        public ClientDetailsService clientDetailsService() {
-//            return new JdbcClientDetailsService(dataSource);
-//        }
-//
-//        @Bean
-//        public OAuth2RequestFactory requestFactory() {
-//            return new DefaultOAuth2RequestFactory(clientDetailsService());
-//        }
-//
-//        @Bean
-//        public ApprovalStoreUserApprovalHandler userApprovalHandler() {
-//            ApprovalStoreUserApprovalHandler approvalStoreUserApprovalHandler = new ApprovalStoreUserApprovalHandler();
-//            approvalStoreUserApprovalHandler.setClientDetailsService(clientDetailsService());
-//            approvalStoreUserApprovalHandler.setApprovalStore(approvalStore());
-//            approvalStoreUserApprovalHandler.setRequestFactory(requestFactory());
-//            approvalStoreUserApprovalHandler.setApprovalExpiryInSeconds(-1);
-//            return approvalStoreUserApprovalHandler;
-//        }
-//
-//    }
+    private final TokenStore tokenStore;
+    private final Environment environment;
 
-    @Configuration
-    @EnableResourceServer
-    protected static class ResourceServerConfiguration extends ResourceServerConfigurerAdapter {
-
-        private final TokenStore tokenStore;
-
-        @Autowired
-        public ResourceServerConfiguration(TokenStore tokenStore) {
-            this.tokenStore = tokenStore;
-        }
-
-        @Override
-        public void configure(ResourceServerSecurityConfigurer resources) {
-            resources.tokenStore(tokenStore).tokenServices(tokenService()).stateless(false);
-        }
-
-        @Override
-        public void configure(HttpSecurity http) throws Exception {
-            http.httpBasic().disable()
-                    .anonymous().disable()
-                    .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and().authorizeRequests()
-                    .anyRequest().authenticated().and().formLogin().disable();
-        }
-
-        @Primary
-        @Bean
-        public RemoteTokenServices tokenService() {
-            RemoteTokenServices tokenService = new RemoteTokenServices();
-            tokenService.setCheckTokenEndpointUrl("http://localhost:8080/oauth/oauth/check_token");
-            tokenService.setClientId("emb");
-            tokenService.setClientSecret("secret");
-            return tokenService;
-        }
-
+    @Autowired
+    public OAuth2ServerConfig(Environment environment, TokenStore tokenStore) {
+        this.tokenStore = tokenStore;
+        this.environment = environment;
     }
 
-    @Configuration
-    @PropertySource({"classpath:persistence.properties"})
-    protected static class Stuff {
+    @Override
+    public void configure(ResourceServerSecurityConfigurer resources) {
+        resources.tokenStore(tokenStore).tokenServices(tokenService()).stateless(false);
+    }
 
-        private final Resource schemaScript;
-        private final Environment environment;
+    @Override
+    public void configure(HttpSecurity http) throws Exception {
+        http.httpBasic().disable()
+                .anonymous().disable()
+                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and().authorizeRequests()
+                .anyRequest().authenticated().and().formLogin().disable();
+    }
 
-        @Autowired
-        public Stuff(@Value("classpath:schema.sql") Resource schemaScript, Environment environment) {
-            this.schemaScript = schemaScript;
-            this.environment = environment;
-        }
+    @Primary
+    @Bean
+    public RemoteTokenServices tokenService() {
+        RemoteTokenServices tokenService = new RemoteTokenServices();
+        tokenService.setCheckTokenEndpointUrl("http://localhost:8080/oauth/oauth/check_token");
+        tokenService.setClientId("emb");
+        tokenService.setClientSecret("secret");
+        return tokenService;
+    }
 
-        @Bean
-        public TokenStore tokenStore() {
-            return new JdbcTokenStore(dataSource());
-        }
+    @Bean
+    public TokenStore tokenStore() {
+        return new JdbcTokenStore(dataSource());
+    }
 
-//        @Bean
-//        public DataSourceInitializer dataSourceInitializer() {
-//            DataSourceInitializer initializer = new DataSourceInitializer();
-//            initializer.setDataSource(dataSource());
-//            initializer.setDatabasePopulator(databasePopulator());
-//            return initializer;
-//        }
-//
-//        private DatabasePopulator databasePopulator() {
-//            ResourceDatabasePopulator populator = new ResourceDatabasePopulator();
-//            populator.addScript(schemaScript);
-//            return populator;
-//        }
-
-        @Bean
-        public DataSource dataSource() {
-            DriverManagerDataSource dataSource = new DriverManagerDataSource();
-            dataSource.setDriverClassName(environment.getProperty("jdbc.driverClassName"));
-            dataSource.setUrl(environment.getProperty("jdbc.url"));
-            dataSource.setUsername(environment.getProperty("jdbc.user"));
-            dataSource.setPassword(environment.getProperty("jdbc.pass"));
-            return dataSource;
-        }
-
+    @Bean
+    public DataSource dataSource() {
+        DriverManagerDataSource dataSource = new DriverManagerDataSource();
+        dataSource.setDriverClassName(environment.getProperty("jdbc.driverClassName"));
+        dataSource.setUrl(environment.getProperty("jdbc.url"));
+        dataSource.setUsername(environment.getProperty("jdbc.user"));
+        dataSource.setPassword(environment.getProperty("jdbc.pass"));
+        return dataSource;
     }
 
 }
